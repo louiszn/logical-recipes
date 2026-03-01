@@ -1,0 +1,14 @@
+name: LogicalRecipes
+version: ${version}
+main: xyz.louiszn.logicalrecipes.LogicalRecipes
+load: STARTUP
+api-version: 1.21.11
+authors:
+  - Louiszn
+
+permissions:
+  logicalrecipes:
+    children:
+      reload:
+        description: "Use /reload command"
+        default: op
