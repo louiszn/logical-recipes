@@ -3,6 +3,7 @@ package xyz.louiszn.logicalrecipes.listener;
 import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -87,6 +88,8 @@ public class SmithingListener implements Listener {
 
 	@EventHandler
 	public void onSmithItem(SmithItemEvent event) {
+		if (event.isCancelled()) return;
+
 		ItemStack result = event.getCurrentItem();
 		if (result == null || !result.hasItemMeta()) return;
 
@@ -98,6 +101,8 @@ public class SmithingListener implements Listener {
 		if (!(recipeObj instanceof Smithing recipe)) {
 			return;
 		}
+
+		event.setCancelled(true);
 
 		SmithingInventory inv = event.getInventory();
 		ItemStack template = inv.getItem(0);
@@ -116,22 +121,35 @@ public class SmithingListener implements Listener {
 		int finalBaseAmount = base.getAmount() - (baseConsume);
 		int finalAdditionAmount = addition.getAmount() - (additionConsume);
 
+		ItemStack item = result.clone();
+
+		// Remove existing meta key
+		ItemMeta meta = result.getItemMeta();
+		meta.getPersistentDataContainer().remove(recipeKey);
+		item.setItemMeta(meta);
+
 		template.setAmount(finalTemplateAmount);
 		base.setAmount(finalBaseAmount);
 		addition.setAmount(finalAdditionAmount);
+		result.setAmount(0);
 
 		Player player = (Player) event.getView().getPlayer();
 
 		// If the cursor is empty, we can set it, otherwise add to inventory
-		if (player.getItemOnCursor().isEmpty()) {
-			player.setItemOnCursor(result.clone());
+		if (player.getItemOnCursor().isEmpty() && !event.isShiftClick()) {
+			player.setItemOnCursor(item);
 		} else {
-			player.getInventory().addItem(result.clone()).values().forEach(item ->
-					player.getWorld().dropItem(player.getLocation(), item)
+			player.getInventory().addItem(item).values().forEach(i ->
+					player.getWorld().dropItem(player.getLocation(), i)
 			);
 		}
 
-		event.setCancelled(true);
+		player.playSound(
+				player.getLocation(),
+				Sound.BLOCK_SMITHING_TABLE_USE,
+				1.0f,
+				1.0f
+		);
 	}
 
 	private boolean matchesIngredient(Ingredient ingredient, ItemStack stack) {
