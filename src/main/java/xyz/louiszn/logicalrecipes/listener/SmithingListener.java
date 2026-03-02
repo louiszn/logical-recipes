@@ -1,6 +1,5 @@
 package xyz.louiszn.logicalrecipes.listener;
 
-import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -59,8 +58,31 @@ public class SmithingListener implements Listener {
 				return;
 			}
 
-			ItemStack result = new ItemStack(resultMaterial, resultData.amount());
+			// Determine which ingredient to copy metadata from
+			ItemStack source = null;
+			String copyFrom = resultData.copyFrom();
 
+			if (copyFrom != null && !copyFrom.equalsIgnoreCase("none")) {
+				source = switch (copyFrom.toLowerCase()) {
+					case "template" -> template;
+					case "base" -> base;
+					case "addition" -> addition;
+					default -> source;
+				};
+			}
+
+			System.out.println(copyFrom);
+
+			// Build result item
+			ItemStack result = new ItemStack(resultMaterial, resultData.amount());
+			if (source != null) {
+				ItemMeta sourceMeta = source.getItemMeta();
+				if (sourceMeta != null) {
+					result.setItemMeta(sourceMeta);
+				}
+			}
+
+			// Mark with recipe ID for consumption
 			ItemMeta meta = result.getItemMeta();
 			meta.getPersistentDataContainer().set(recipeKey, PersistentDataType.STRING, recipe.id);
 			result.setItemMeta(meta);
