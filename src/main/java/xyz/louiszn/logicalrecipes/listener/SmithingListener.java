@@ -71,8 +71,6 @@ public class SmithingListener implements Listener {
 				};
 			}
 
-			System.out.println(copyFrom);
-
 			// Build result item
 			ItemStack result = new ItemStack(resultMaterial, resultData.amount());
 			if (source != null) {
@@ -100,10 +98,20 @@ public class SmithingListener implements Listener {
 
 			if (vanillaRecipe == null) continue;
 
-			if (matchesVanillaRecipe(vanillaRecipe, template, base, addition)) {
+			if (matchesRecipe(vanillaRecipe, template, base, addition)) {
 				event.setResult(null);
-				plugin.getLogger().fine("Blocked overridden vanilla recipe: " + overrideKey);
 				break;
+			}
+		}
+
+		ItemStack current = event.getResult();
+
+		if (current != null && current.hasItemMeta()) {
+			PersistentDataContainer pdc = current.getItemMeta().getPersistentDataContainer();
+			NamespacedKey ghostKey = new NamespacedKey(plugin, "ghost_recipe");
+
+			if (pdc.has(ghostKey, PersistentDataType.BYTE)) {
+				event.setResult(null);
 			}
 		}
 	}
@@ -179,7 +187,7 @@ public class SmithingListener implements Listener {
 		return expected != null && stack.getType() == expected;
 	}
 
-	private boolean matchesVanillaRecipe(Recipe recipe, ItemStack template, ItemStack base, ItemStack addition) {
+	private boolean matchesRecipe(Recipe recipe, ItemStack template, ItemStack base, ItemStack addition) {
 		// Handle SmithingTransformRecipe (has template, base, addition)
 		if (recipe instanceof SmithingTransformRecipe transform) {
 			boolean templateMatches = transform.getTemplate().test(template);
